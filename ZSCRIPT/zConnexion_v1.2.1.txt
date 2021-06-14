@@ -1,0 +1,381 @@
+
+/*Sensivity*/
+[VarDef, PANSENSE,50]
+[VarDef, ZOOMSENSE,20]
+[VarDef, ROTSENSE,30]
+
+/*Communication with DLL*/
+[VarDef,dllPath,"zConnexion.dll"]           //path to dll
+[VarDef,ver,0]                              //DLL version
+[VarDef,err,0]                              //standard error
+[VarDef,zCDLLData,""]                       //Data string from DLL
+
+/*Saving views*/
+[VarDef,view1Path,"zC_Data\zC_view1.zvr"]
+[VarDef,view2Path,"zC_Data\zC_view2.zvr"]
+[VarDef,view3Path,"zC_Data\zC_view3.zvr"]
+[VarDef, view1List(9),0]
+[VarDef, view2List(9),0]
+[VarDef, view3List(9),0]
+
+/*Data from driver*/
+[VarDef, mD,0]     
+[VarDef, Tx,0]     
+[VarDef, Ty,0]     
+[VarDef, Tz,0]     
+[VarDef, Rx,0]     
+[VarDef, Ry,0]     
+[VarDef, Rz,0]     
+
+/*Intermediate variables for transformation and rotation.*/
+[VarDef, Sy,0]      //Sign of yR
+[VarDef, Zini,0]    //Needed for zR calculations
+[VarDef, Znew,0]    //Needed for zR calculations
+[VarDef, X,0]       //Amount of rotation on specific axe (here goes rotation input from spacemouse)
+[VarDef, Y,0]       //Amount of rotation on specific axe (here goes rotation input from spacemouse)
+[VarDef, Z,0]       //Amount of rotation on specific axe (here goes rotation input from spacemouse)
+[VarDef, TxR,0]     //buffers
+[VarDef, TyR,0]     //buffers
+[VarDef, TzR,0]     //buffers
+
+[RoutineDef,zCCheckSystem,
+	[If,[FileExists,dllPath],
+		,
+		[Note,"DLL is missing"][Exit]
+	]
+]
+
+[RoutineDef,zCTestVersion,
+	[IConfig,4.8]
+	[RoutineCall,zCCheckSystem]
+	[VarSet,ver,[FileExecute,[Var,dllPath],"Version"]]
+	[NoteBar,[StrMerge,"This DLL is version ",ver]]
+]
+
+[RoutineDef, SetPosition,
+    [VarSet, W,[IGet, "Document:Width"]]
+    [VarSet, H,[IGet, "Document:Height"]]
+    [TransformGet,xP,yP,zP,xS,yS,zS,xR,yR,zR]
+    [TransformSet,W/2,H/2,zP,xS,yS,zS,ixR,iyR,izR]
+,ixR,iyR,izR]
+[RoutineDef, HandleSaveView,
+    [TransformGet,xP,yP,zP,xS,yS,zS,xR,yR,zR]
+    [If, n==1,
+        [VarSet, view1List(0),xP]
+        [VarSet, view1List(1),yP]
+        [VarSet, view1List(2),zP]
+        [VarSet, view1List(3),xS]
+        [VarSet, view1List(4),yS]
+        [VarSet, view1List(5),zS]
+        [VarSet, view1List(6),xR]
+        [VarSet, view1List(7),yR]
+        [VarSet, view1List(8),zR]
+        [If,[VarSave, view1List,view1Path],[NoteBar, "View 1 saved."],[NoteBar, "Unable to save view 1"]]
+    ,]
+    [If, n==2,
+        [VarSet, view2List(0),xP]
+        [VarSet, view2List(1),yP]
+        [VarSet, view2List(2),zP]
+        [VarSet, view2List(3),xS]
+        [VarSet, view2List(4),yS]
+        [VarSet, view2List(5),zS]
+        [VarSet, view2List(6),xR]
+        [VarSet, view2List(7),yR]
+        [VarSet, view2List(8),zR]
+        [If,[VarSave, view2List,view2Path],[NoteBar, "View 2 saved."],[NoteBar, "Unable to save view 2"]]
+    ,]
+    [If, n==3,
+        [VarSet, view3List(0),xP]
+        [VarSet, view3List(1),yP]
+        [VarSet, view3List(2),zP]
+        [VarSet, view3List(3),xS]
+        [VarSet, view3List(4),yS]
+        [VarSet, view3List(5),zS]
+        [VarSet, view3List(6),xR]
+        [VarSet, view3List(7),yR]
+        [VarSet, view3List(8),zR]
+        [If,[VarSave, view3List,view3Path],[NoteBar, "View 3 saved."],[NoteBar, "Unable to save view 3"]]
+    ,]
+
+,n]
+[RoutineDef, HandleRestoreView,
+    [TransformGet,xP,yP,zP,xS,yS,zS,xR,yR,zR]
+    [If, n==1,
+        [If, [FileExists, view1Path],
+            [VarLoad, view1List,view1Path]
+            [TransformSet,  view1List(0),
+                            view1List(1),
+                            view1List(2),
+                            view1List(3),
+                            view1List(4),
+                            view1List(5),
+                            view1List(6),
+                            view1List(7),
+                            view1List(8)]
+            [NoteBar, "View 1 restored."]
+        ,
+            [NoteBar, "View file does not exist"]
+        ]
+    ,]
+    [If, n==2,
+        [If, [FileExists, view2Path],
+            [VarLoad, view2List,view2Path]
+            [TransformSet,  view2List(0),
+                            view2List(1),
+                            view2List(2),
+                            view2List(3),
+                            view2List(4),
+                            view2List(5),
+                            view2List(6),
+                            view2List(7),
+                            view2List(8)]
+            [NoteBar, "View 2 restored."]
+        ,
+            [NoteBar, "View file does not exist"]
+        ]
+    ,]
+    [If, n==3,
+        [If, [FileExists, view3Path],
+            [VarLoad, view3List,view3Path]
+            [TransformSet,  view3List(0),
+                            view3List(1),
+                            view3List(2),
+                            view3List(3),
+                            view3List(4),
+                            view3List(5),
+                            view3List(6),
+                            view3List(7),
+                            view3List(8)]
+            [NoteBar, "View 3 restored."]
+        ,
+            [NoteBar, "View file does not exist"]
+        ]
+    ,]
+,n]
+[RoutineDef, HandleQZIN,
+    [TransformGet,xP,yP,zP,xS,yS,zS,xR,yR,zR]
+    [TransformSet,xP,yP,zP,xS*10,yS*10,zS*10,xR,yR,zR]
+]
+[RoutineDef, HandleQZOUT,
+    [TransformGet,xP,yP,zP,xS,yS,zS,xR,yR,zR]
+    [TransformSet,xP,yP,zP,xS/10,yS/10,zS/10,xR,yR,zR]
+]
+
+[VarDef, stmp,""]
+[VarDef, ntmp,0]
+[RoutineDef,zCGetDataFromDLL,
+    [IConfig,4.8]
+	[MemCreate, Mem, 28, 0]
+	[VarSet,err,[FileExecute,[Var,dllPath],"zCgetData",,,Mem]]
+	[If,err,
+		[Note,"An error has occured"]
+		[Exit]
+	,
+		[MemRead, Mem, mD ,5, 0]
+        [If, (mD==0)||(mD==8),
+        //Handling navigation and V3D`s tilt command.
+            [MemRead, Mem, Tx ,5, 4] 
+            [MemRead, Mem, Ty ,5, 8] 
+            [MemRead, Mem, Tz ,5, 12] 
+            [MemRead, Mem, Rx ,5, 16]
+            [MemRead, Mem, Ry ,5, 20]
+            [MemRead, Mem, Rz ,5, 24]
+            [If, mD==8,
+                //Disable sensivity for tilting
+                [VarSet, ntmp,ROTSENSE]
+                [VarSet, ROTSENSE,100]
+                [VarSet, Rz,-Rz]
+                [RoutineCall, HandleTR]
+                [VarSet, ROTSENSE,ntmp]
+            ,
+                [RoutineCall, HandleTR]
+            ]
+        ,
+        //Handling V3D commands, no tr/rot data from driver.
+            [If,mD==1,[IPress,Transform:Fit],]                      //Fit
+            [If,mD==2,[RoutineCall, SetPosition,-90,180,0],]        //Top
+            [If,mD==3,[RoutineCall, SetPosition,-0,90.1,180],]      //Right
+            [If,mD==4,[RoutineCall, SetPosition,-0,-90.1,180],]     //Left
+            [If,mD==5,[RoutineCall, SetPosition,0,0,0],]            //Front
+            [If,mD==6,[RoutineCall, SetPosition,90,180,0],]         //Bottom
+            [If,mD==7,[RoutineCall, SetPosition,-0,180,180],]       //Back
+            [If,mD==9,[RoutineCall, SetPosition,-25,-45,0],]        //ISO1
+            [If,mD==10,[RoutineCall, SetPosition,25,135,-180],]     //ISO2
+            //TODO
+            [If,mD==11,[RoutineCall, HandleQZIN],]              //QickZoomIN
+            [If,mD==12,[RoutineCall, HandleQZOUT],]             //QickZoomOUT
+            [If,mD==15,[RoutineCall,HandleSaveView,1],]         //SaveView
+            [If,mD==16,[RoutineCall,HandleSaveView,2],]         //SaveView
+            [If,mD==17,[RoutineCall,HandleSaveView,3],]         //SaveView
+            [If,mD==18,[RoutineCall, HandleRestoreView,1],]     //RestoreView
+            [If,mD==19,[RoutineCall, HandleRestoreView,2],]     //RestoreView
+            [If,mD==20,[RoutineCall, HandleRestoreView,3],]     //RestoreView
+        ]
+	]
+	[MemDelete,Mem]
+]
+
+//Sin and Cos workaround routines and vars (SIN & COS not working since zB2019)
+[RoutineDef,COSINE,
+    [VarSet,OPP,TAN(in)]
+    [If,ABS(in)<=90,
+        [VarSet,HYP,SQRT((1^^2)+(OPP^^2))]
+    ,
+        [VarSet,HYP,-SQRT((1^^2)+(OPP^^2))]
+    ]
+    [VarSet,out,1/HYP]
+,in,out]
+[RoutineDef,SINE,
+    [VarSet,OPP,TAN(in)]
+    [If,ABS(in)>=90,
+        [VarSet,HYP,-SQRT((1^^2)+(OPP^^2))]
+    ,
+        [VarSet,HYP,SQRT((1^^2)+(OPP^^2))]
+    ]
+    [VarSet,out,OPP/HYP]
+,in,out]
+[VarDef, SINxR,0]
+[VarDef, SINyR,0]
+[VarDef, SINzR,0]
+[VarDef, COSxR,0]
+[VarDef, COSyR,0]
+[VarDef, COSzR,0]
+[VarDef, SINX,0]
+[VarDef, COSX,0]
+[VarDef, SINZ,0]
+[VarDef, COSZ,0]
+[VarDef, SINTyR,0]
+[VarDef, COSTyR,0]
+
+//Routine calculates and applies new position.
+[RoutineDef, HandleTR,
+
+    [TransformGet,xP,yP,zP,xS,yS,zS,xR,yR,zR]
+
+    //Apply sensivity and calculate new pan/zoom values 
+    [VarSet, xP, xP+(Tx*PANSENSE/100)]
+    [VarSet, yP, yP-(Ty*PANSENSE/100)]
+    [VarSet, Tz,-Tz]
+    [If, ((zS<ABS(Tz))&&(Tz<0)),    //Testing not to zoom out too much
+        [VarSet, Tz, 0]
+    ,
+        [VarSet, Tz, Tz*(ZOOMSENSE/100)*(zS/50)]
+        [If, Tz>4000,[VarSet, Tz,0]]
+    ]
+    [VarSet, xS, ABS(xS)+Tz]
+    [VarSet, yS, ABS(yS)+Tz]
+    [VarSet, zS, ABS(zS)+Tz]
+
+    //Rotations
+    [VarSet, X,-Rx*ROTSENSE/100]
+    [VarSet, Y,Ry*ROTSENSE/100]
+    [VarSet, Z,-Rz*ROTSENSE/100]
+ 
+    //XROT (only xR and yR change)
+    [If, X,
+            [RoutineCall,SINE,xR,SINxR]
+            [RoutineCall,SINE,yR,SINyR]
+            [RoutineCall,COSINE,xR,COSxR]
+            [RoutineCall,COSINE,yR,COSyR]
+            [RoutineCall,SINE,X,SINX]
+            [RoutineCall,COSINE,X,COSX]
+        //xR(XROT)
+            [VarSet, TxR,ASIN((SINxR*COSX)+(COSxR*COSyR*SINX))]
+        //yR(YROT)
+            [VarSet, TyR,ATAN2(COSxR*SINyR,-(SINxR*SINX)+(COSxR*COSyR*COSX))]
+        //Result
+            [VarSet, xR,TxR]
+            [VarSet, yR,TyR]
+    ,]
+
+    //YROT (only yR and zR change)
+    [If, Y,
+        //zR(YROT)
+            [If, yR>0,[VarSet, Sy,1],[VarSet, Sy,-1]] 
+            [If, ABS(yR+Y)>=180,[VarSet, TyR,yR-(Sy*180)],[VarSet, TyR,yR]]
+            //zR(yR)
+            [RoutineCall,SINE,TyR,SINTyR]
+            [RoutineCall,COSINE,TyR,COSTyR]            
+            [RoutineCall,SINE,xR,SINxR]
+            [VarSet, Zini,ATAN2(SINTyR*SINxR,COSTyR)] 
+            //zR(yR+Y)
+            [VarSet, TyR,TyR+Y]
+            [RoutineCall,SINE,TyR,SINTyR]
+            [RoutineCall,COSINE,TyR,COSTyR]            
+            [VarSet, Znew,ATAN2(SINTyR*SINxR,COSTyR)]
+            //Calculate zR
+            [VarSet, TzR,zR+Znew-Zini]
+            //Adjusting for zR flip
+            [If, ABS(TzR)>180,[VarSet, TzR,TzR-(360*ABS(TzR)/TzR)],]
+        //yR(YROT)
+            [VarSet, TyR, yR+Y]
+        //Result
+            [VarSet, yR,TyR]
+            [VarSet, zR,TzR]
+    ,]      
+   
+    //ZROT (xR, yR and zR change)
+    [If, Z,
+            [RoutineCall,SINE,xR,SINxR]
+            [RoutineCall,SINE,yR,SINyR]
+            [RoutineCall,COSINE,xR,COSxR]
+            [RoutineCall,COSINE,yR,COSyR]
+            [RoutineCall,SINE,Z,SINZ]
+            [RoutineCall,COSINE,Z,COSZ]
+        //xR(ZROT)
+            [VarSet, TxR,ASIN((SINxR*COSZ)+(COSxR*SINyR*SINZ))]
+        //yR(ZROT)
+            [VarSet, TyR,ATAN2((COSxR*SINyR*COSZ)-(SINxR*SINZ),COSxR*COSyR)]       
+        //zR(ZROT)
+            [If, Z>0,            
+                [VarSet, TzR,ATAN2(COSyR,SINxR*SINyR)-ATAN2(COSyR*COSZ,(COSxR*SINZ)+(SINxR*SINyR*COSZ))]
+            ,
+                [VarSet, Z,180-ABS(Z)]
+                [RoutineCall,SINE,Z,SINZ]
+                [RoutineCall,COSINE,Z,COSZ]                
+                [If, ABS(yR)<=90,
+                    [VarSet, TzR,ATAN2(COSyR,SINxR*SINyR)-ATAN2(COSyR*COSZ,(COSxR*SINZ)+(SINxR*SINyR*COSZ))-180]
+                ,
+                    [VarSet, TzR,ATAN2(COSyR,SINxR*SINyR)-ATAN2(COSyR*COSZ,(COSxR*SINZ)+(SINxR*SINyR*COSZ))+180]
+                ]
+            ]
+            [VarSet, TzR,TzR+zR]
+            [If, ABS(TzR)>180,[VarSet, TzR,TzR-(360*ABS(TzR)/TzR)],]        
+        //Result
+            [VarSet, xR,TxR]
+            [VarSet, yR,TyR]
+            [VarSet, zR,TzR]
+    ,]     
+
+    [TransformSet,xP,yP,zP,xS,yS,zS,xR,yR,zR] 
+
+]
+
+[RoutineDef, zConnexion,
+    [IFreeze,
+        [ZBrushPrioritySet, 2]
+        [RoutineCall, zCGetDataFromDLL]
+    ,0]
+]
+
+/********************************************************************************************/
+
+[ISubPalette, "Tool:zConnexion"]
+[IButton,"Tool:zConnexion:DLL Version","Checks DLL version",
+    [RoutineCall, zCTestVersion]
+,,1]
+[IButton,"Tool:zConnexion:Execute","Run zConnexion. DON`T USE MANUALLY. Assign "F12" keyboard shortcut.",
+    [RoutineCall, zConnexion]
+,,1]
+[ISlider, "Tool:zConnexion:Pan sens.",50,1,0,100,"Pan sensivity. Use with high poly models to somewhat mitigate lags.",
+    [VarSet,PANSENSE,[IGet, 0]]
+,,1]
+[ISlider, "Tool:zConnexion:Zoom sens.",20,1,0,100,"Zoom sensivity. Use with high poly models to somewhat mitigate lags.",
+    [VarSet,ZOOMSENSE,[IGet, 0]]
+,,1]
+[ISlider, "Tool:zConnexion:Rot. sens.",30,1,0,1000,"Rotation sensivity.Use with high poly models to somewhat mitigate lags.",
+    [VarSet,ROTSENSE,[IGet, 0]]
+,,1]
+[IButton, "Tool:zConnexion:Close","Close zConnexion",
+    [IClose, "Tool:zConnexion"]
+,,1]
